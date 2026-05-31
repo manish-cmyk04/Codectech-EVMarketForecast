@@ -1,0 +1,527 @@
+# =========================================================
+# EV MARKET FORECAST DASHBOARD
+# =========================================================
+
+
+import pandas as pd
+from sklearn.linear_model import LinearRegression
+
+import plotly.express as px
+import plotly.graph_objects as go
+
+from dash import Dash, dcc, html
+
+# =========================================================
+# DATASET
+# =========================================================
+
+data = {
+
+    "Year": [2018, 2019, 2020, 2021, 2022, 2023],
+
+    "Global_EV_Sales_Million":
+    [2.1, 2.3, 3.2, 6.6, 10.5, 14.0],
+
+    "Government_Subsidy_Billion":
+    [12, 15, 20, 28, 35, 40],
+
+    "Charging_Stations_Million":
+    [0.3, 0.5, 0.8, 1.2, 1.8, 2.5]
+}
+
+df = pd.DataFrame(data)
+
+# =========================================================
+# MACHINE LEARNING FORECAST
+# =========================================================
+
+X = df[["Year"]]
+
+y = df["Global_EV_Sales_Million"]
+
+model = LinearRegression()
+
+model.fit(X, y)
+
+# Future DataFrame (No Warning)
+
+future_years = pd.DataFrame({
+
+    "Year": [2024, 2025, 2026, 2027, 2028]
+})
+
+predictions = model.predict(future_years)
+
+forecast_df = pd.DataFrame({
+
+    "Year": future_years["Year"],
+
+    "Predicted_EV_Sales_Million": predictions
+})
+
+# =========================================================
+# COMMON GRAPH STYLE
+# =========================================================
+
+def dark_layout(fig):
+
+    fig.update_layout(
+
+        template="plotly_dark",
+
+        paper_bgcolor="#1e1e2f",
+
+        plot_bgcolor="#1e1e2f",
+
+        font_color="white",
+
+        title_x=0.5,
+
+        height=500
+    )
+
+# =========================================================
+# GRAPH 1 - GLOBAL EV SALES TREND
+# =========================================================
+
+fig_sales = px.line(
+
+    df,
+
+    x="Year",
+
+    y="Global_EV_Sales_Million",
+
+    markers=True,
+
+    title="Global EV Sales Trend"
+)
+
+fig_sales.update_traces(
+
+    line=dict(width=4),
+
+    marker=dict(size=8)
+)
+
+dark_layout(fig_sales)
+
+# =========================================================
+# GRAPH 2 - EV FORECAST
+# =========================================================
+
+fig_forecast = go.Figure()
+
+# Actual Sales
+
+fig_forecast.add_trace(
+
+    go.Scatter(
+
+        x=df["Year"],
+
+        y=df["Global_EV_Sales_Million"],
+
+        mode='lines+markers',
+
+        name='Actual Sales',
+
+        line=dict(width=4),
+
+        marker=dict(size=8)
+    )
+)
+
+# Connected Forecast
+
+forecast_x = [2023] + forecast_df["Year"].tolist()
+
+forecast_y = [
+
+    df["Global_EV_Sales_Million"].iloc[-1]
+
+] + forecast_df["Predicted_EV_Sales_Million"].tolist()
+
+fig_forecast.add_trace(
+
+    go.Scatter(
+
+        x=forecast_x,
+
+        y=forecast_y,
+
+        mode='lines+markers',
+
+        name='Forecast Sales',
+
+        line=dict(
+            width=4,
+            dash='dash'
+        ),
+
+        marker=dict(size=8)
+    )
+)
+
+fig_forecast.update_layout(
+
+    title="EV Market Forecast"
+)
+
+dark_layout(fig_forecast)
+
+# =========================================================
+# GRAPH 3 - GOVERNMENT SUBSIDY ANALYSIS
+# =========================================================
+
+fig_policy = px.bar(
+
+    df,
+
+    x="Year",
+
+    y="Government_Subsidy_Billion",
+
+    text_auto=True,
+
+    title="Government Subsidy Analysis"
+)
+
+dark_layout(fig_policy)
+
+# =========================================================
+# GRAPH 4 - CHARGING STATION GROWTH
+# =========================================================
+
+fig_station = px.area(
+
+    df,
+
+    x="Year",
+
+    y="Charging_Stations_Million",
+
+    title="Charging Station Growth"
+)
+
+dark_layout(fig_station)
+
+# =========================================================
+# GRAPH 5 - GLOBAL EV ADOPTION MAP
+# =========================================================
+
+country_data = pd.DataFrame({
+
+    "Country": [
+
+        "USA",   # United States
+        "CHN",   # China
+        "IND",   # India
+        "DEU",   # Germany
+        "GBR",   # United Kingdom
+        "JPN",   # Japan
+        "KOR",   # South Korea
+        "IDN",   # Indonesia
+        "FRA",   # France
+        "BRA",   # Brazil
+        "CAN",   # Canada
+        "ZAF"    # South Africa
+    ],
+
+    "EV_Adoption": [
+
+        15,
+        40,
+        8,
+        20,
+        18,
+        22,
+        17,
+        10,
+        19,
+        12,
+        16,
+        9
+    ]
+})
+fig_map = px.choropleth(
+
+    country_data,
+
+    locations="Country",
+
+    locationmode="ISO-3",
+
+    color="EV_Adoption",
+
+    color_continuous_scale="Turbo",
+
+    title="Global EV Adoption Map"
+)
+
+fig_map.update_geos(
+
+    showcountries=True,
+
+    countrycolor="white",
+
+    showcoastlines=True,
+
+    coastlinecolor="white",
+
+    showland=True,
+
+    landcolor="#2d3748",
+
+    showocean=True,
+
+    oceancolor="#111827",
+
+    projection_type="natural earth"
+)
+
+fig_map.update_layout(
+
+    template="plotly_dark",
+
+    paper_bgcolor="#1e1e2f",
+
+    plot_bgcolor="#1e1e2f",
+
+    font_color="white",
+
+    title_x=0.5,
+
+    height=600,
+
+    geo=dict(
+        bgcolor="#1e1e2f"
+    )
+)
+
+# =========================================================
+# DASH APPLICATION
+# =========================================================
+
+app = Dash(__name__)
+
+app.layout = html.Div(
+
+    style={
+
+        'background':
+        'linear-gradient(to right, #141e30, #243b55)',
+
+        'padding': '20px',
+
+        'fontFamily': 'Arial',
+
+        'minHeight': '100vh'
+    },
+
+    children=[
+
+        # =================================================
+        # MAIN TITLE
+        # =================================================
+
+        html.H1(
+
+            "GLOBAL EV MARKET FORECAST DASHBOARD",
+
+            style={
+
+                'textAlign': 'center',
+
+                'color': 'cyan',
+
+                'fontSize': '45px',
+
+                'padding': '20px'
+            }
+        ),
+
+        # =================================================
+        # SUBTITLE
+        # =================================================
+
+        html.H3(
+
+            "Analysis and Forecasting of Global Electric Vehicle Growth",
+
+            style={
+
+                'textAlign': 'center',
+
+                'color': 'white',
+
+                'marginBottom': '30px'
+            }
+        ),
+
+        # =================================================
+        # FEATURES BOX
+        # =================================================
+
+        html.Div(
+
+            children=[
+
+                html.H2(
+
+                    "Project Features",
+
+                    style={
+
+                        'color': 'yellow',
+
+                        'textAlign': 'center'
+                    }
+                ),
+
+                html.Ul([
+
+                    html.Li(
+                        "Global EV Sales Trend Analysis",
+                        style={
+                            'color': 'white',
+                            'fontSize': '18px'
+                        }
+                    ),
+
+                    html.Li(
+                        "Machine Learning Forecast",
+                        style={
+                            'color': 'white',
+                            'fontSize': '18px'
+                        }
+                    ),
+
+                    html.Li(
+                        "Government Subsidy Analysis",
+                        style={
+                            'color': 'white',
+                            'fontSize': '18px'
+                        }
+                    ),
+
+                    html.Li(
+                        "Charging Station Growth",
+                        style={
+                            'color': 'white',
+                            'fontSize': '18px'
+                        }
+                    ),
+
+                    html.Li(
+                        "Global EV Adoption Map",
+                        style={
+                            'color': 'white',
+                            'fontSize': '18px'
+                        }
+                    ),
+
+                    html.Li(
+                        "Interactive Plotly Dashboard",
+                        style={
+                            'color': 'white',
+                            'fontSize': '18px'
+                        }
+                    )
+
+                ])
+
+            ],
+
+            style={
+
+                'backgroundColor': '#1e1e2f',
+
+                'padding': '20px',
+
+                'borderRadius': '15px',
+
+                'marginBottom': '30px',
+
+                'boxShadow': '0px 0px 15px cyan'
+            }
+        ),
+
+        # =================================================
+        # FIRST ROW
+        # =================================================
+
+        html.Div([
+
+            html.Div(
+
+                dcc.Graph(figure=fig_sales),
+
+                style={
+                    'width': '49%',
+                    'display': 'inline-block'
+                }
+            ),
+
+            html.Div(
+
+                dcc.Graph(figure=fig_forecast),
+
+                style={
+                    'width': '49%',
+                    'display': 'inline-block',
+                    'float': 'right'
+                }
+            )
+
+        ]),
+
+        # =================================================
+        # SECOND ROW
+        # =================================================
+
+        html.Div([
+
+            html.Div(
+
+                dcc.Graph(figure=fig_policy),
+
+                style={
+                    'width': '49%',
+                    'display': 'inline-block'
+                }
+            ),
+
+            html.Div(
+
+                dcc.Graph(figure=fig_station),
+
+                style={
+                    'width': '49%',
+                    'display': 'inline-block',
+                    'float': 'right'
+                }
+            )
+
+        ]),
+
+        # =================================================
+        # MAP
+        # =================================================
+
+        dcc.Graph(figure=fig_map)
+
+    ]
+)
+
+# =========================================================
+# RUN APPLICATION
+# =========================================================
+
+if __name__ == '__main__':
+
+    app.run(
+        host='127.0.0.1',
+        port=8050,
+        debug=True
+    )
