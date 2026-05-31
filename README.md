@@ -1,13 +1,10 @@
 # Codectech-EVMarketForecast
 # EV Market Forecast Dashboard
 
-# EV Market Forecast Dashboard
-
-**Name:** Bagammagari Manish
-**Company:** Codectechnologies
-**Domain:** EV Technology
-**Duration:** May 27, 2026 – June 27, 2026
-
+* **Name:** Bagammagari Manish
+* **Company:** Codectechnologies
+* **Domain:** EV Technology
+* **Duration:** May 27, 2026 – June 27, 2026
 
 ---
 
